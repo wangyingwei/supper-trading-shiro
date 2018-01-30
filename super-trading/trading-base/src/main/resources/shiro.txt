@@ -1,0 +1,124 @@
+1. 授权需要继承 AuthorizingRealm 类, 并实现其 doGetAuthorizationInfo 方法
+2. AuthorizingRealm 类继承自 AuthenticatingRealm, 但没有实现 AuthenticatingRealm 中的 doGetAuthenticationInfo, 所以认证和授权只需要继承 AuthorizingRealm 就可以了. 同时实现他的两个抽象方法.
+
+1. 为什么使用 MD5 盐值加密: 
+2. 如何做到:
+   1). 在 doGetAuthenticationInfo 方法返回值创建 SimpleAuthenticationInfo 对象的时候, 需要使用SimpleAuthenticationInfo(principal, credentials, credentialsSalt, realmName) 构造器
+   2). 使用 ByteSource.Util.bytes() 来计算盐值. 
+   3). 盐值需要唯一: 一般使用随机字符串或 user id
+   4). 使用 new SimpleHash(hashAlgorithmName, credentials, salt, hashIterations); 来计算盐值加密后的密码的值. 
+
+1. 如何把一个字符串加密为 MD5 
+2. 替换当前 Realm 的 credentialsMatcher 属性. 直接使用 HashedCredentialsMatcher 对象, 并设置加密算法即可. 
+
+密码的比对:
+通过 AuthenticatingRealm 的 credentialsMatcher 属性来进行的密码的比对!
+
+1. 获取当前的 Subject. 调用 SecurityUtils.getSubject();
+2. 测试当前的用户是否已经被认证. 即是否已经登录. 调用 Subject 的 isAuthenticated() 
+3. 若没有被认证, 则把用户名和密码封装为 UsernamePasswordToken 对象
+   1). 创建一个表单页面
+   2). 把请求提交到 SpringMVC 的 Handler
+   3). 获取用户名和密码. 
+4. 执行登录: 调用 Subject 的 login(AuthenticationToken) 方法. 
+5. 自定义 Realm 的方法, 从数据库中获取对应的记录, 返回给 Shiro.
+   1). 实际上需要继承 org.apache.shiro.realm.AuthenticatingRealm 类
+   2). 实现 doGetAuthenticationInfo(AuthenticationToken) 方法. 
+6. 由 shiro 完成对密码的比对. 
+
+shiro的认证策略：
+   1、FirstSuccessfulStrategy：只要有一个Realm 验证成功即可，只返回第一个Realm 身份验证成功的认证信息，其他的忽略；
+   2、AtLeastOneSuccessfulStrategy：只要有一个Realm验证成功即可，和FirstSuccessfulStrategy不同，将返回所有Realm身份验证成功的认证信息；
+   3、AllSuccessfulStrategy：所有Realm验证成功才算成功，且返回所有Realm身份验证成功的认证信息，如果有一个失败就失败了。
+ModularRealmAuthenticator默认是AtLeastOneSuccessfulStrategy策略
+
+shiro可以实现的功能：
+1、权限URI配置
+2、登录认证
+3、密码加密
+4、多realm认证
+5、权限配置
+
+super-trading项目用户角色权限模型：
+角色：
+   admin（系统管理员）
+   buyer（采购方）
+   seller（供应商）
+   adminTag（系统管理员标签权限）
+   buyerTag（采购方标签权限）
+   sellerTag（供应商标签权限）
+   
+ 用户：
+   admin1
+   buyer1
+   seller1
+   
+   
+资源：
+   demo管理（所有人）
+        用户管理（系统管理员）
+        角色管理（系统管理员）
+        权限管理（系统管理员）
+        采购方页面（采购方）
+        供应商页面（供应商）
+        
+
+密码重试次数限制
+
+如在1个小时内密码最多重试5次，如果尝试次数超过5次就锁定1小时，1小时后可再次重试，如果还是重试失败，可以锁定如1天，
+以此类推，防止密码被暴力破解。我们通过继承HashedCredentialsMatcher，且使用Ehcache记录重试次数和超时时间。
+
+ 
+
+com.github.zhangkaitao.shiro.chapter5.hash.credentials.RetryLimitHashedCredentialsMatcher：
+
+
+
+Java代码 复制代码 收藏代码
+1.public boolean doCredentialsMatch(AuthenticationToken token, AuthenticationInfo info) {  
+2.       String username = (String)token.getPrincipal();  
+3.        //retry count + 1  
+4.        Element element = passwordRetryCache.get(username);  
+5.        if(element == null) {  
+6.            element = new Element(username , new AtomicInteger(0));  
+7.            passwordRetryCache.put(element);  
+8.        }  
+9.        AtomicInteger retryCount = (AtomicInteger)element.getObjectValue();  
+10.        if(retryCount.incrementAndGet() > 5) {  
+11.            //if retry count > 5 throw  
+12.            throw new ExcessiveAttemptsException();  
+13.        }  
+14.  
+15.        boolean matches = super.doCredentialsMatch(token, info);  
+16.        if(matches) {  
+17.            //clear retry count  
+18.            passwordRetryCache.remove(username);  
+19.        }  
+20.        return matches;  
+21.}   
+
+
+如上代码逻辑比较简单，即如果密码输入正确清除cache中的记录；否则cache中的重试次数+1，如果超出5次那么抛出异常表示超出重试次数了。
+
+
+
+对于Subject我们一般这么使用：
+
+1、身份验证（login）
+
+2、授权（hasRole*/isPermitted*或checkRole*/checkPermission*）
+
+3、将相应的数据存储到会话（Session）
+
+4、切换身份（RunAs）/多线程身份传播
+
+5、退出
+而我们必须的功能就是1、2、5。
+
+
+
+
+
+
+
+

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.eccl.supertrading.buyer.mapper.BuyerDao">
+
+	<resultMap id="BaseResultMap" type="com.eccl.supertrading.buyer.pojo.Buyer">
+		<id property="id" column="id" jdbcType="INTEGER" />
+		<result property="buyer_name" column="buyerName" jdbcType="VARCHAR" />
+		<result property="head_path" column="headPath" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+		id, buyerName,headPath
+	</sql>
+<!-- 根据采购方id查询 -->
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		select
+		<include refid="Base_Column_List" />
+		from buyer
+		where id = #{id}
+	</select>
+	<!-- 查询所有采购方 -->
+	<select id="listAll" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		select
+		<include refid="Base_Column_List" />
+		from buyer order by id
+	</select>
+	<!-- 根据采购方ID更新信息 -->
+	<update id="updateByPrimaryKeySelective" parameterType="com.eccl.supertrading.buyer.pojo.Buyer">
+		update buyer
+		<set>
+			<if test="buyerName != null">
+		        buyerName = #{buyerName},
+		    </if> 
+		    <if test="headPath != null">
+		        headPath = #{headPath},
+		    </if> 
+		</set>
+		where id = #{id}
+	</update>
+	<!-- 添加采购方信息 -->
+	<insert id="insertSelective" parameterType="com.eccl.supertrading.buyer.pojo.Buyer">
+		insert into buyer
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="buyerName != null">
+				buyerName,
+			</if>
+			<if test="headPath != null">
+				headPath
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="buyerName != null">
+				#{buyerName},
+			</if>
+			<if test="buyerName != null">
+				#{headpath}
+			</if>
+		</trim>
+	</insert>
+	<!--根据采购方ID删除  -->
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		delete from buyer where id = #{id}
+	</delete>
+
+</mapper>

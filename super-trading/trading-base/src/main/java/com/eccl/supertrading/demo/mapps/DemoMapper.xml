@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.eccl.supertrading.demo.mapper.DemoMapper">
+
+	<resultMap id="BaseResultMap" type="com.eccl.supertrading.demo.po.Demo">
+		<id property="id" column="id" jdbcType="INTEGER" />
+		<result property="name" column="name" jdbcType="VARCHAR" />
+		<result property="itemDescription" column="item_description" jdbcType="VARCHAR" />
+		<result property="unit" column="unit" jdbcType="INTEGER" />
+		<result property="remark" column="remark" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+		id, name, item_description, unit, remark
+	</sql>
+
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		select
+		<include refid="Base_Column_List" />
+		from demo
+		where id = #{id}
+	</select>
+	
+	<select id="listAll" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		select
+		<include refid="Base_Column_List" />
+		from demo order by id
+	</select>
+	
+	<update id="updateByPrimaryKeySelective" parameterType="com.eccl.supertrading.demo.po.Demo">
+		update Demo
+		<set>
+			<if test="name != null">
+		        name = #{name},
+		    </if> 
+		    <if test="itemDescription != null">
+		        item_description =#{itemDescription},
+		    </if> 
+		    <if test="unit != null">
+		        unit = #{unit},
+		    </if>  
+		    <if test="remark != null">
+		        remark = #{remark}
+		    </if>
+		</set>
+		where id = #{id}
+	</update>
+	
+	<insert id="insertSelective" parameterType="com.eccl.supertrading.demo.po.Demo">
+		insert into demo
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="name != null">
+				name,
+			</if>
+			<if test="itemDescription != null">
+				item_description,
+			</if>
+			<if test="unit != null">
+				unit,
+			</if>
+			<if test="remark != null">
+				remark,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="name != null">
+				#{name},
+			</if>
+			<if test="itemDescription != null">
+				#{itemDescription},
+			</if>
+			<if test="unit != null">
+				#{unit},
+			</if>
+			<if test="remark != null">
+				#{remark},
+			</if>
+		</trim>
+	</insert>
+	
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		delete from demo where id = #{id}
+	</delete>
+
+</mapper>
